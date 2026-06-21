@@ -6,17 +6,18 @@
   <title>Treasury Rates Dashboard</title>
   <style>
     :root {
-      --bg: #f5f7fb;
+      --bg: #f4f7fb;
       --surface: #ffffff;
       --surface-muted: #f8f9fc;
-      --text: #122033;
-      --muted: #617089;
+      --surface-strong: #f2f6ff;
+      --text: #10243f;
+      --muted: #61758f;
       --line: #e7eaf3;
       --accent: #0f6fff;
       --success: #158347;
       --warning: #a96b00;
-      --danger: #c62828;
-      --shadow: 0 8px 24px rgba(18, 32, 51, 0.08);
+      --shadow: 0 18px 44px rgba(16, 36, 63, 0.08);
+      --radius: 18px;
     }
 
     * { box-sizing: border-box; }
@@ -24,14 +25,16 @@
     body {
       font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       margin: 0;
-      background: var(--bg);
+      background:
+        radial-gradient(circle at top, rgba(15, 111, 255, 0.06), transparent 16%),
+        var(--bg);
       color: var(--text);
     }
 
     .container {
-      max-width: 1400px;
+      max-width: 1220px;
       margin: 0 auto;
-      padding: 32px 18px 48px;
+      padding: 34px 18px 56px;
     }
 
     .top-bar {
@@ -39,36 +42,43 @@
       justify-content: space-between;
       align-items: center;
       gap: 16px;
-      margin-bottom: 24px;
+      margin-bottom: 18px;
     }
 
     .title-wrap h1 {
       margin: 0;
       font-size: 2rem;
       letter-spacing: -0.04em;
+      line-height: 1;
+      color: #0d2245;
+      font-weight: 800;
     }
 
     .title-wrap p {
-      margin: 6px 0 0;
+      margin: 8px 0 0;
       color: var(--muted);
+      font-size: 0.95rem;
     }
 
     .refresh-btn {
-      background: var(--accent);
+      background: linear-gradient(180deg, #1a78ff, #0f6fff);
       color: white;
       border: none;
       padding: 12px 16px;
-      border-radius: 10px;
+      border-radius: 999px;
       cursor: pointer;
-      font-weight: 600;
+      font-weight: 700;
+      box-shadow: 0 10px 18px rgba(15, 111, 255, 0.22);
     }
 
     .card {
       background: var(--surface);
-      border-radius: 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
       box-shadow: var(--shadow);
       padding: 18px;
       margin-bottom: 18px;
+      overflow: hidden;
     }
 
     .status-row {
@@ -84,7 +94,7 @@
       padding: 6px 10px;
       border-radius: 999px;
       font-size: 0.9rem;
-      font-weight: 600;
+      font-weight: 700;
     }
 
     .pill.success { background: #e7f7ee; color: var(--success); }
@@ -98,34 +108,44 @@
     }
 
     .overview-tile {
-      background: var(--surface-muted);
+      background: linear-gradient(180deg, #f9fbff, #f4f7ff);
       border-radius: 14px;
       padding: 14px 16px;
+      border: 1px solid var(--line);
+      min-height: 98px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
 
     .overview-tile .label {
       color: var(--muted);
-      font-size: 0.85rem;
+      font-size: 0.78rem;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.08em;
+      font-weight: 700;
     }
 
     .overview-tile .value {
-      font-size: 1.6rem;
-      font-weight: 700;
+      font-size: 1.7rem;
+      font-weight: 800;
       margin-top: 6px;
+      color: #0d2245;
     }
 
     .panel-title {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin: 0 0 16px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      margin: 0;
+      color: #0d2245;
+      letter-spacing: -0.02em;
     }
 
     .curve-layout {
       display: grid;
-      grid-template-columns: 1.2fr 1fr;
+      grid-template-columns: 1.2fr 0.8fr;
       gap: 18px;
+      align-items: start;
     }
 
     .curve-controls,
@@ -146,13 +166,14 @@
       border-radius: 10px;
       font: inherit;
       min-width: 180px;
+      font-weight: 600;
     }
 
     svg.chart {
       width: 100%;
-      height: 320px;
+      height: 340px;
       display: block;
-      background: linear-gradient(180deg, #fff 0%, var(--surface-muted) 100%);
+      background: linear-gradient(180deg, #fff 0%, #f9fbff 100%);
       border-radius: 12px;
       overflow: visible;
     }
@@ -172,6 +193,53 @@
       justify-content: space-between;
       align-items: center;
       font-size: 0.9rem;
+      border: 1px solid var(--line);
+    }
+
+    .heatmap-panel {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .heatmap-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .heatmap-cell {
+      border-radius: 10px;
+      padding: 12px 10px;
+      text-align: center;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      font-weight: 700;
+      color: #0d2245;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      cursor: pointer;
+    }
+
+    .heatmap-cell:hover {
+      transform: translateY(-1px);
+      box-shadow: inset 0 0 0 1px rgba(15, 111, 255, 0.08);
+    }
+
+    .heatmap-cell.selected {
+      outline: 2px solid rgba(15, 111, 255, 0.3);
+      box-shadow: inset 0 0 0 1px rgba(15, 111, 255, 0.1);
+    }
+
+    .heatmap-cell span:first-child {
+      font-size: 0.78rem;
+      opacity: 0.8;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
     }
 
     .history-grid {
@@ -181,11 +249,16 @@
     }
 
     .history-mini-card {
-      background: var(--surface-muted);
+      background: linear-gradient(180deg, #f9fbff, #f3f6ff);
       border-radius: 12px;
       padding: 12px;
       cursor: pointer;
-      transition: transform 0.15s ease;
+      border: 1px solid var(--line);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .history-mini-card:hover {
+      box-shadow: 0 10px 18px rgba(16, 36, 63, 0.06);
     }
 
     .history-mini-card:hover { transform: translateY(-1px); }
@@ -222,6 +295,7 @@
       background: var(--surface-muted);
       border-radius: 12px;
       padding: 12px;
+      border: 1px solid var(--line);
     }
 
     .stat-label {
@@ -229,11 +303,12 @@
       font-size: 0.8rem;
       text-transform: uppercase;
       letter-spacing: 0.04em;
+      font-weight: 700;
     }
 
     .stat-value {
       font-size: 1.4rem;
-      font-weight: 700;
+      font-weight: 800;
       margin-top: 6px;
     }
 
@@ -249,10 +324,11 @@
     }
 
     th {
-      font-size: 0.85rem;
+      font-size: 0.83rem;
       color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.06em;
+      font-weight: 700;
     }
 
     td:last-child {
@@ -262,8 +338,24 @@
 
     .muted { color: var(--muted); }
 
+    .tooltip {
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      background: rgba(16, 36, 63, 0.94);
+      color: white;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      opacity: 0;
+      transform: translate(-50%, -110%);
+      transition: opacity 0.12s ease;
+      white-space: nowrap;
+    }
+
     @media (max-width: 980px) {
       .curve-layout,
+      .heatmap-panel,
       .history-panel,
       .overview-grid,
       .history-grid {
@@ -275,6 +367,7 @@
       .top-bar { flex-direction: column; align-items: flex-start; }
       .stats-row { grid-template-columns: 1fr; }
       th, td { padding: 10px 8px; }
+      .heatmap-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -290,6 +383,8 @@
       </div>
       <button class="refresh-btn" onclick="refreshData()">Refresh data</button>
     </div>
+
+    <div id="tooltip" class="tooltip"></div>
 
     <div class="card">
       <div class="status-row">
@@ -328,6 +423,25 @@
         </div>
         <div>
           <div id="curve-points" class="curve-points"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="heatmap-panel">
+        <div>
+          <h2 class="panel-title">Treasury Yield Heatmap</h2>
+          <div id="heatmap-grid" class="heatmap-grid"></div>
+        </div>
+        <div>
+          <div class="stat-box">
+            <div class="stat-label">Curve Slope</div>
+            <div class="stat-value" id="curve-slope">--</div>
+          </div>
+          <div class="stat-box" style="margin-top: 10px;">
+            <div class="stat-label">Selected Date</div>
+            <div class="stat-value" id="curve-date-label">--</div>
+          </div>
         </div>
       </div>
     </div>
@@ -472,11 +586,23 @@
       return `${line} L ${lastX.toFixed(2)},${(height - pad).toFixed(2)} L ${firstX.toFixed(2)},${(height - pad).toFixed(2)} Z`;
     }
 
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function colorForValue(value, min, max) {
+      const ratio = max === min ? 0.5 : (value - min) / (max - min);
+      const normalized = clamp(ratio, 0, 1);
+      const hue = 210 - normalized * 40;
+      const light = 92 - normalized * 24;
+      return `hsl(${hue}, 78%, ${light}%)`;
+    }
+
     function renderCurveChart(curveData) {
       const svg = document.getElementById('curve-chart');
       const sorted = sortByMaturity(curveData);
       const width = 640;
-      const height = 320;
+      const height = 340;
       const pad = 24;
       const chartWidth = width - pad * 2;
       const xStep = sorted.length > 1 ? chartWidth / (sorted.length - 1) : chartWidth;
@@ -516,6 +642,53 @@
           <strong>${Number(item.yield_value).toFixed(2)}%</strong>
         </div>
       `).join('');
+    }
+
+    function renderHeatmap(data) {
+      const grid = document.getElementById('heatmap-grid');
+      const tooltip = document.getElementById('tooltip');
+      if (!grid || !data.length) return;
+
+      const values = data.map(item => item.yield_value);
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const selectedDate = document.getElementById('curve-date')?.value || '';
+
+      grid.innerHTML = data.map((item) => `
+        <div class="heatmap-cell" data-maturity="${item.maturity}" style="background:${colorForValue(item.yield_value, min, max)}">
+          <span>${item.maturity}</span>
+          <span>${Number(item.yield_value).toFixed(2)}%</span>
+        </div>
+      `).join('');
+
+      grid.querySelectorAll('.heatmap-cell').forEach((cell) => {
+        const item = data.find((entry) => entry.maturity === cell.dataset.maturity);
+        if (!item) return;
+
+        cell.addEventListener('mouseenter', (event) => {
+          tooltip.textContent = `${item.maturity}: ${Number(item.yield_value).toFixed(2)}% on ${selectedDate}`;
+          tooltip.style.opacity = '1';
+          tooltip.style.left = `${event.clientX}px`;
+          tooltip.style.top = `${event.clientY}px`;
+        });
+
+        cell.addEventListener('mousemove', (event) => {
+          tooltip.style.left = `${event.clientX}px`;
+          tooltip.style.top = `${event.clientY}px`;
+        });
+
+        cell.addEventListener('mouseleave', () => {
+          tooltip.style.opacity = '0';
+        });
+
+        cell.addEventListener('click', () => {
+          grid.querySelectorAll('.heatmap-cell').forEach((node) => node.classList.remove('selected'));
+          cell.classList.add('selected');
+        });
+      });
+
+      const slope = (Math.max(...values) - Math.min(...values)).toFixed(2);
+      document.getElementById('curve-slope').textContent = `${slope}%`;
     }
 
     function renderHistoryChart(historyData) {
@@ -611,6 +784,8 @@
 
         const curve = await fetchJson(`/api/rates/curve?observation_date=${encodeURIComponent(curveDate.value)}`);
         renderCurveChart(curve);
+        renderHeatmap(curve);
+        document.getElementById('curve-date-label').textContent = curveDate.value;
 
         const selectedHistory = await fetchJson(`/api/rates/history/${historyMaturity.value}`);
         const zscore = await fetchJson(`/analytics/zscore/${historyMaturity.value}`);
@@ -653,6 +828,8 @@
         curveDate.addEventListener('change', async () => {
           const selectedCurve = await fetchJson(`/api/rates/curve?observation_date=${encodeURIComponent(curveDate.value)}`);
           renderCurveChart(selectedCurve);
+          renderHeatmap(selectedCurve);
+          document.getElementById('curve-date-label').textContent = curveDate.value;
         });
 
         historyMaturity.addEventListener('change', async () => {
