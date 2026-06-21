@@ -74,7 +74,11 @@ else:
 
 FRED_API_KEY = os.getenv(
     "FRED_API_KEY",
-    CONFIG_FRED_API_KEY or "YOUR_FRED_API_KEY",
+    CONFIG_FRED_API_KEY or "",
+)
+
+FRED_API_KEY_CONFIGURED = bool(
+    FRED_API_KEY and FRED_API_KEY.strip() and FRED_API_KEY != "YOUR_FRED_API_KEY"
 )
 
 FRED_SERIES = {
@@ -210,10 +214,17 @@ async def get_latest_source_date() -> date | None:
     Return the latest observation date available from the configured
     Treasury source.
     """
+    if not FRED_API_KEY_CONFIGURED:
+        return None
+
     latest_date = None
 
     for fred_series in FRED_SERIES.values():
-        payload = await fetch_fred_series(fred_series)
+        try:
+            payload = await fetch_fred_series(fred_series)
+        except (httpx.HTTPError, RuntimeError):
+            continue
+
         observations = payload.get("observations", [])
 
         for item in observations:
@@ -233,6 +244,8 @@ async def fetch_fred_series(series_id: str):
     """
     Fetch Treasury data from FRED.
     """
+    if not FRED_API_KEY_CONFIGURED:
+        raise RuntimeError("FRED API key is not configured.")
 
     url = "https://api.stlouisfed.org/fred/series/observations"
 
@@ -254,12 +267,17 @@ async def ingest_all_treasury_data():
     """
     Fetch all configured Treasury maturities.
     """
+    if not FRED_API_KEY_CONFIGURED:
+        return
 
     db = SessionLocal()
 
     try:
         for maturity, fred_series in FRED_SERIES.items():
-            payload = await fetch_fred_series(fred_series)
+            try:
+                payload = await fetch_fred_series(fred_series)
+            except (httpx.HTTPError, RuntimeError):
+                continue
 
             observations = payload.get("observations", [])
 
@@ -369,6 +387,88 @@ def latest_treasury_yields():
         db.close()
 
 
+@app.get("/api/rates/dates")
+def rate_dates():
+    db = SessionLocal()
+
+    try:
+        dates = (
+            db.query(TreasuryYield.observation_date)
+            .distinct()
+            .order_by(TreasuryYield.observation_date.desc())
+            .all()
+        )
+        return [str(row[0]) for row in dates]
+
+    finally:
+        db.close()
+
+
+@app.get("/api/rates/curve")
+def curve_for_date(observation_date: str | None = None):
+    db = SessionLocal()
+
+    try:
+        if observation_date:
+            target_date = datetime.strptime(
+                observation_date,
+                "%Y-%m-%d",
+            ).date()
+        else:
+            latest = (
+                db.query(TreasuryYield)
+                .order_by(TreasuryYield.observation_date.desc())
+                .first()
+            )
+            if not latest:
+                return []
+            target_date = latest.observation_date
+
+        rows = (
+            db.query(TreasuryYield)
+            .filter(TreasuryYield.observation_date == target_date)
+            .order_by(TreasuryYield.maturity.asc())
+            .all()
+        )
+
+        return [
+            {
+                "maturity": row.maturity,
+                "observation_date": str(row.observation_date),
+                "yield_value": row.yield_value,
+            }
+            for row in rows
+        ]
+
+    finally:
+        db.close()
+
+
+@app.get("/api/rates/history/{maturity}")
+def history_for_maturity(maturity: str):
+    db = SessionLocal()
+
+    try:
+        rows = (
+            db.query(TreasuryYield)
+            .filter(TreasuryYield.maturity == maturity.upper())
+            .order_by(TreasuryYield.observation_date.asc())
+            .all()
+        )
+
+        return [
+            {
+                "maturity": row.maturity,
+                "observation_date": str(row.observation_date),
+                "yield_value": row.yield_value,
+            }
+            for row in rows
+        ]
+
+    finally:
+        db.close()
+
+
 @app.get("/api/rates/status")
 async def rates_status():
     db = SessionLocal()
@@ -389,11 +489,13 @@ async def rates_status():
 
         up_to_date = (
             latest_date is not None
-            and source_latest is not None
-            and latest_date >= source_latest
+            and (
+                source_latest is None
+                or latest_date >= source_latest
+            )
         )
 
-        if not up_to_date:
+        if not up_to_date and source_latest is not None:
             await ingest_all_treasury_data()
 
             latest_record = (
@@ -408,8 +510,10 @@ async def rates_status():
             )
             up_to_date = (
                 latest_date is not None
-                and source_latest is not None
-                and latest_date >= source_latest
+                and (
+                    source_latest is None
+                    or latest_date >= source_latest
+                )
             )
 
         return {
@@ -420,7 +524,7 @@ async def rates_status():
             "source_latest_observation_date": (
                 str(source_latest) if source_latest else None
             ),
-            "source": "FRED",
+            "source": "FRED" if FRED_API_KEY_CONFIGURED else "FRED (not configured)",
         }
 
     finally:
