@@ -1,0 +1,6 @@
+title: Muni Bond Suggester
+description: Treasury rates dashboard converted for GitHub Pages (Jekyll)
+baseurl: ""
+url: ""
+markdown: kramdown
+permalink: /:path/

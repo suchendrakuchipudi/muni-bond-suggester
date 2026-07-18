@@ -22,7 +22,7 @@ Optional:
 """
 
 from datetime import date, datetime, timedelta
-from typing import List
+from typing import List, Optional
 
 import importlib.util
 import os
@@ -188,7 +188,7 @@ def startup():
 
 def is_data_upto_date(
     db,
-    reference_date: date | None = None,
+    reference_date: Optional[date] = None,
 ) -> bool:
     """
     Return True when the latest stored treasury records match the
@@ -209,7 +209,7 @@ def is_data_upto_date(
     return latest.observation_date >= reference_date
 
 
-async def get_latest_source_date() -> date | None:
+async def get_latest_source_date() -> Optional[date]:
     """
     Return the latest observation date available from the configured
     Treasury source.
@@ -405,7 +405,7 @@ def rate_dates():
 
 
 @app.get("/api/rates/curve")
-def curve_for_date(observation_date: str | None = None):
+def curve_for_date(observation_date: Optional[str] = None):
     db = SessionLocal()
 
     try:

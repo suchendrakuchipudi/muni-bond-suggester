@@ -4,9 +4,6 @@ This project provides a FastAPI backend that stores Treasury yield data in Postg
 
 ## Requirements
 
-- Python 3.11+
-- PostgreSQL running locally (or a reachable database URL)
-- A FRED API key set in your environment variables
 
 ## Environment setup
 
@@ -36,10 +33,29 @@ uvicorn treasury_data_engine:app --reload
 
 Then open:
 
-- http://127.0.0.1:8000/dashboard
 
 ## API endpoints
 
-- `GET /api/rates/status`
-- `GET /api/rates/latest`
-- `POST /ingest`
+
+## GitHub Pages (Jekyll)
+
+This repository is set up to publish via GitHub Pages using Jekyll. The site uses a custom layout at `_layouts/default.html` and the top-level `index.html` contains the page content with Jekyll front matter.
+
+To publish on GitHub Pages:
+
+1. Push this repository to GitHub.
+2. In the repository Settings -> Pages, select the branch `main` (or `master`) and the root folder as the source.
+3. The site will be available at `https://<your-username>.github.io/<repo-name>/` (or at a custom domain if configured).
+
+If you want to use the default GitHub Pages theme instead, add a `theme:` entry to `_config.yml`.
+
+## Run tests automatically on changes
+
+Install development requirements and run the watcher which will re-run `pytest` whenever tracked files change:
+
+```bash
+python -m pip install -r requirements-dev.txt
+./scripts/watch-tests.sh
+```
+
+The watcher runs an initial test run and then re-runs when files (Python, HTML, Markdown, YAML, JSON) are created, modified, moved, or deleted.
